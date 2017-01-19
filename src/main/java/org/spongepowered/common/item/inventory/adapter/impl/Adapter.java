@@ -423,7 +423,7 @@ public class Adapter implements MinecraftInventoryAdapter {
     @SuppressWarnings("unchecked")
     @Override
     public <T extends Inventory> T next() {
-        return (T) this.emptyInventory();
+        return (T) this.emptyInventory(); // TODO implement me
     }
 
 //    protected Inventory generateParent(Lens<IInventory, net.minecraft.item.ItemStack> root) {
