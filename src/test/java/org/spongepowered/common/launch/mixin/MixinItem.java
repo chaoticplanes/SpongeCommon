@@ -22,26 +22,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.common.data.manipulator.mutable.block;
+package org.spongepowered.common.launch.mixin;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import net.minecraft.item.Item;
+import net.minecraft.util.ResourceLocation;
+import org.spongepowered.api.item.ItemType;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.common.registry.type.ItemTypeRegistryModule;
 
-import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.data.manipulator.immutable.block.ImmutableStairShapeData;
-import org.spongepowered.api.data.manipulator.mutable.block.StairShapeData;
-import org.spongepowered.api.data.type.StairShape;
-import org.spongepowered.api.data.type.StairShapes;
-import org.spongepowered.common.data.manipulator.immutable.block.ImmutableSpongeStairShapeData;
-import org.spongepowered.common.data.manipulator.mutable.common.AbstractSingleCatalogData;
-import org.spongepowered.common.data.util.ImplementationRequiredForTest;
+@Mixin(value = Item.class, remap = false)
+public abstract class MixinItem {
 
-public class SpongeStairShapeData extends AbstractSingleCatalogData<StairShape, StairShapeData, ImmutableStairShapeData> implements StairShapeData {
-
-    public SpongeStairShapeData(StairShape variant) {
-        super(StairShapeData.class, checkNotNull(variant), Keys.STAIR_SHAPE, ImmutableSpongeStairShapeData.class);
+    // Register items
+    @Inject(method = "registerItem(ILnet/minecraft/util/ResourceLocation;Lnet/minecraft/item/Item;)V", at = @At("RETURN"))
+    private static void registerMinecraftItem(int id, ResourceLocation name, Item item, CallbackInfo ci) {
+        ItemTypeRegistryModule.getInstance().registerAdditionalCatalog((ItemType) item);
     }
 
-    public SpongeStairShapeData() {
-        this(StairShapes.STRAIGHT);
-    }
 }

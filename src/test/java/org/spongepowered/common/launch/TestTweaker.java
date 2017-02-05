@@ -22,26 +22,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.common.data.manipulator.mutable.block;
+package org.spongepowered.common.launch;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static org.spongepowered.asm.mixin.MixinEnvironment.Side.SERVER;
 
-import org.spongepowered.api.data.key.Keys;
-import org.spongepowered.api.data.manipulator.immutable.block.ImmutableStairShapeData;
-import org.spongepowered.api.data.manipulator.mutable.block.StairShapeData;
-import org.spongepowered.api.data.type.StairShape;
-import org.spongepowered.api.data.type.StairShapes;
-import org.spongepowered.common.data.manipulator.immutable.block.ImmutableSpongeStairShapeData;
-import org.spongepowered.common.data.manipulator.mutable.common.AbstractSingleCatalogData;
-import org.spongepowered.common.data.util.ImplementationRequiredForTest;
+import net.minecraft.launchwrapper.LaunchClassLoader;
+import org.spongepowered.asm.mixin.MixinEnvironment;
+import org.spongepowered.asm.mixin.Mixins;
+import org.spongepowered.lwts.AbstractTestTweaker;
 
-public class SpongeStairShapeData extends AbstractSingleCatalogData<StairShape, StairShapeData, ImmutableStairShapeData> implements StairShapeData {
+import java.io.File;
 
-    public SpongeStairShapeData(StairShape variant) {
-        super(StairShapeData.class, checkNotNull(variant), Keys.STAIR_SHAPE, ImmutableSpongeStairShapeData.class);
+public class TestTweaker extends AbstractTestTweaker {
+
+    @Override
+    public void injectIntoClassLoader(LaunchClassLoader loader) {
+        super.injectIntoClassLoader(loader);
+
+        registerAccessTransformer("META-INF/common_at.cfg");
+
+        SpongeLaunch.initPaths(new File("."));
+
+        SpongeLaunch.setupMixinEnvironment();
+        Mixins.addConfiguration("mixins.common.test.json");
+        MixinEnvironment.getDefaultEnvironment().setSide(SERVER);
     }
 
-    public SpongeStairShapeData() {
-        this(StairShapes.STRAIGHT);
-    }
 }
