@@ -43,6 +43,7 @@ import net.minecraft.inventory.ContainerPlayer;
 import net.minecraft.inventory.ContainerRepair;
 import net.minecraft.inventory.ContainerWorkbench;
 import net.minecraft.inventory.IInventory;
+import net.minecraft.inventory.InventoryHelper;
 import net.minecraft.inventory.InventoryLargeChest;
 import net.minecraft.item.ItemStack;
 import net.minecraft.tileentity.TileEntityChest;
@@ -66,6 +67,7 @@ import org.spongepowered.common.item.inventory.adapter.InventoryAdapter;
 import org.spongepowered.common.item.inventory.adapter.impl.MinecraftInventoryAdapter;
 import org.spongepowered.common.item.inventory.adapter.impl.slots.CraftingOutputAdapter;
 import org.spongepowered.common.item.inventory.adapter.impl.slots.EquipmentSlotAdapter;
+import org.spongepowered.common.item.inventory.custom.CustomContainer;
 import org.spongepowered.common.item.inventory.lens.impl.MinecraftLens;
 import org.spongepowered.common.item.inventory.lens.impl.collections.SlotCollection;
 import org.spongepowered.common.item.inventory.lens.impl.minecraft.ContainerChestInventoryLens;
@@ -122,39 +124,7 @@ public final class ContainerUtil {
         if (CauseTracker.ENABLED && currentState.tracksBlockSpecificDrops()) {
             final PhaseContext context = currentPhase.context;
             if (!currentState.getPhase().ignoresItemPreMerging(currentState) && SpongeImpl.getGlobalConfig().getConfig().getOptimizations().doDropsPreMergeItemDrops()) {
-                final Multimap<BlockPos, EntityItem> multimap = context.getBlockItemDropSupplier().get();
-                final BlockPos pos = new BlockPos(x, y, z);
-                final Collection<EntityItem> itemStacks = multimap.get(pos);
-                for (int i = 0; i < inventory.getSizeInventory(); i++) {
-                    final net.minecraft.item.ItemStack itemStack = inventory.getStackInSlot(i);
-                    if (!itemStack.isEmpty()) {
-                        float f = RANDOM.nextFloat() * 0.8F + 0.1F;
-                        float f1 = RANDOM.nextFloat() * 0.8F + 0.1F;
-                        float f2 = RANDOM.nextFloat() * 0.8F + 0.1F;
-                        int stackSize = RANDOM.nextInt(21) + 10;
-
-                        if (stackSize > itemStack.getCount()) {
-                            stackSize = itemStack.getCount();
-                        }
-
-                        itemStack.setCount(itemStack.getCount() - stackSize);
-                        final double posX = x + (double) f;
-                        final double posY = y + (double) f1;
-                        final double posZ = z + (double) f2;
-                        EntityItem entityitem = new EntityItem(worldServer, posX, posY, posZ, new ItemStack(itemStack.getItem(), stackSize, itemStack.getMetadata()));
-
-                        if (itemStack.hasTagCompound()) {
-                            entityitem.getEntityItem().setTagCompound(itemStack.getTagCompound().copy());
-                        }
-
-                        float f3 = 0.05F;
-                        entityitem.motionX = RANDOM.nextGaussian() * (double) f3;
-                        entityitem.motionY = RANDOM.nextGaussian() * (double) f3 + 0.20000000298023224D;
-                        entityitem.motionZ = RANDOM.nextGaussian() * (double) f3;
-                        itemStacks.add(entityitem);
-                    }
-                }
-            } else {
+                // Add itemstack to pre merge list
                 final Multimap<BlockPos, ItemDropData> multimap = context.getBlockDropSupplier().get();
                 final BlockPos pos = new BlockPos(x, y, z);
                 final Collection<ItemDropData> itemStacks = multimap.get(pos);
@@ -166,6 +136,32 @@ public final class ContainerUtil {
                                 .build());
                     }
                 }
+            } else {
+                // Don't do pre-merging - directly spawn in item
+                final Multimap<BlockPos, EntityItem> multimap = context.getBlockItemDropSupplier().get();
+                final BlockPos pos = new BlockPos(x, y, z);
+                final Collection<EntityItem> itemStacks = multimap.get(pos);
+                for (int j = 0; j < inventory.getSizeInventory(); j++) {
+                    final net.minecraft.item.ItemStack itemStack = inventory.getStackInSlot(j);
+                    if (!itemStack.isEmpty()) {
+                        float f = RANDOM.nextFloat() * 0.8F + 0.1F;
+                        float f1 = RANDOM.nextFloat() * 0.8F + 0.1F;
+                        float f2 = RANDOM.nextFloat() * 0.8F + 0.1F;
+
+                        while (!itemStack.isEmpty())
+                        {
+                            int i = RANDOM.nextInt(21) + 10;
+
+                            EntityItem entityitem = new EntityItem(worldServer, x + (double)f, y + (double)f1, z + (double)f2, itemStack.splitStack(i));
+
+                            float f3 = 0.05F;
+                            entityitem.motionX = RANDOM.nextGaussian() * 0.05000000074505806D;
+                            entityitem.motionY = RANDOM.nextGaussian() * 0.05000000074505806D + 0.20000000298023224D;
+                            entityitem.motionZ = RANDOM.nextGaussian() * 0.05000000074505806D;
+                            itemStacks.add(entityitem);
+                        }
+                    }
+                }
             }
             return;
         }
@@ -173,30 +169,7 @@ public final class ContainerUtil {
         for (int i = 0; i < inventory.getSizeInventory(); i++) {
             final net.minecraft.item.ItemStack itemStack = inventory.getStackInSlot(i);
             if (!itemStack.isEmpty()) {
-                float f = RANDOM.nextFloat() * 0.8F + 0.1F;
-                float f1 = RANDOM.nextFloat() * 0.8F + 0.1F;
-                float f2 = RANDOM.nextFloat() * 0.8F + 0.1F;
-                int stackSize = RANDOM.nextInt(21) + 10;
-
-                if (stackSize > itemStack.getCount()) {
-                    stackSize = itemStack.getCount();
-                }
-
-                itemStack.setCount(itemStack.getCount() - stackSize);
-                final double posX = x + (double) f;
-                final double posY = y + (double) f1;
-                final double posZ = z + (double) f2;
-                EntityItem entityitem = new EntityItem(worldServer, posX, posY, posZ, new ItemStack(itemStack.getItem(), stackSize, itemStack.getMetadata()));
-
-                if (itemStack.hasTagCompound()) {
-                    entityitem.getEntityItem().setTagCompound(itemStack.getTagCompound().copy());
-                }
-
-                float f3 = 0.05F;
-                entityitem.motionX = RANDOM.nextGaussian() * (double) f3;
-                entityitem.motionY = RANDOM.nextGaussian() * (double) f3 + 0.20000000298023224D;
-                entityitem.motionZ = RANDOM.nextGaussian() * (double) f3;
-                worldServer.spawnEntity(entityitem);
+                InventoryHelper.spawnItemStack(worldServer, x, y, z, itemStack);
             }
         }
     }
@@ -268,15 +241,17 @@ public final class ContainerUtil {
     }
 
     public static Carrier getCarrier(Container container) {
-        if (container instanceof ContainerChest) {
+        if (container instanceof CustomContainer) {
+            return ((CustomContainer) container).inv.getCarrier();
+        } else if (container instanceof ContainerChest) {
             IInventory inventory = ((ContainerChest) container).getLowerChestInventory();
             if (inventory instanceof TileEntityChest) {
                 return (Carrier) inventory;
             } else if (inventory instanceof InventoryLargeChest) {
                 return null;
-                // TODO: Decide what the carrire should be
+                // TODO: Decide what the carrier should be (wrapper of 2 Block-based carriers including info which block is the upper inventory)
             } else {
-                return null;
+                return inventory instanceof Carrier ? ((Carrier) inventory) : null;
             }
         } else if (container instanceof ContainerHopper) {
             return carrierOrNull(((ContainerHopper) container).hopperInventory);
